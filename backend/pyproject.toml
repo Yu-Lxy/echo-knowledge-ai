@@ -1,0 +1,28 @@
+[project]
+name = "echo-knowledge-backend"
+version = "0.1.0"
+description = "Echo Knowledge AI backend (FastAPI + worker)"
+requires-python = ">=3.12"
+dependencies = [
+    # ARCHITECTURE.md §3 已确认依赖清单（M0 安装）
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy>=2.0",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3",
+    "pydantic-settings>=2.6",
+    "pymupdf>=1.24",
+    "httpx>=0.28",
+    "python-multipart>=0.0.17",
+    "argon2-cffi>=23.1",
+    "charset-normalizer>=3.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

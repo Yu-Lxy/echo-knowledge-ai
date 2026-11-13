@@ -1,0 +1,57 @@
+# Echo Knowledge AI — 四服务编排（ARCHITECTURE.md §14）
+# db / backend / worker / frontend；backend 与 worker 同一镜像不同命令
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-echo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-echo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-echo} -d $${POSTGRES_DB:-echo}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://echo:change-me@db:5432/echo}
+      APP_DEBUG: ${APP_DEBUG:-false}
+    ports:
+      - "8001:8000" # 开发期直连后端（宿主 8000 被占用）；生产经 frontend nginx 反代
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build: ./backend # 与 backend 同镜像
+    command: ["python", "-m", "app.workers.loop"] # M0 占位循环；任务认领逻辑 M1 落地
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://echo:change-me@db:5432/echo}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
