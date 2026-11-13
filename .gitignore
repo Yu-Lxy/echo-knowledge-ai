@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# 环境变量与密钥（只提交 .env.example）
+.env
+.env.*
+!.env.example
+
+# 本地数据与存储
+storage/
+pgdata/
+*.log
+
+# 编辑器与系统
+.DS_Store
+.idea/
+.vscode/
