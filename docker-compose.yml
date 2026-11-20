@@ -22,6 +22,9 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://echo:change-me@db:5432/echo}
       APP_DEBUG: ${APP_DEBUG:-false}
+      STORAGE_ROOT: /data/storage
+    volumes:
+      - filestore:/data/storage # §14：文档对象存储卷（M1 起接入）
     ports:
       - "8001:8000" # 开发期直连后端（宿主 8000 被占用）；生产经 frontend nginx 反代
     depends_on:
@@ -36,9 +39,12 @@ services:
 
   worker:
     build: ./backend # 与 backend 同镜像
-    command: ["python", "-m", "app.workers.loop"] # M0 占位循环；任务认领逻辑 M1 落地
+    command: ["python", "-m", "app.workers.loop"] # 任务认领（SKIP LOCKED）在 M1 后续落地
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://echo:change-me@db:5432/echo}
+      STORAGE_ROOT: /data/storage
+    volumes:
+      - filestore:/data/storage # 与 backend 共享存储卷
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +61,4 @@ services:
 
 volumes:
   pgdata:
+  filestore:
